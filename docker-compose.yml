@@ -1,0 +1,58 @@
+# https://docs.docker.com/reference/compose-file/
+services:
+  # 1. Contenedor visible al usuario (Frontend / Proxy)
+  frontend:
+    image: docker.io/avisiedo/ubi-ping:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.custom
+    hostname: app.org
+    container_name: app_frontend
+    command: ["sleep", "3600"]
+    networks:
+      - red_publica
+      - red_privada_app
+    depends_on:
+      - backend
+
+  # 2. Contenedor con visibilidad privada (Backend / API)
+  backend:
+    image: docker.io/avisiedo/ubi-ping:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.custom
+    container_name: app_backend
+    hostname: backend.app.org
+    command: ["sleep", "3600"]
+    networks:
+      - red_privada_app
+      # - red_privada_db
+    depends_on:
+      - database
+
+  # 3. Contenedor con visibilidad privada (Base de datos)
+  database:
+    image: docker.io/avisiedo/ubi-ping:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.custom
+    container_name: app_database
+    hostname: db.app.org
+    command: ["sleep", "3600"]
+    networks:
+      # - red_privada_db
+      - red_privada_app
+
+# Definición de redes para aislar el tráfico
+networks:
+  red_publica:
+    driver: bridge
+  red_privada_app:
+    driver: bridge
+    internal: true # Impide la salida directa a internet
+  red_privada_db:
+    driver: bridge
+    internal: true # Aísla completamente la base de datos
+
+volumes:
+  datos_db:
